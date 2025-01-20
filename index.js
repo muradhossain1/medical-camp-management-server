@@ -27,6 +27,7 @@ async function run() {
         // await client.connect();
 
         const userCollection = client.db('medicalDB').collection('users')
+        const campCollection = client.db('medicalDB').collection('camps')
 
         // jwt releted api
         app.post('/jwt', async (req, res) => {
@@ -109,6 +110,17 @@ async function run() {
             const result = await userCollection.deleteOne(query);
             res.send(result);
         })
+
+        
+        // camps releted api
+        app.post('/camps',verifyToken, verifyAdmin, async(req, res) => {
+            const camp = req.body;
+            const result = await campCollection.insertOne(camp);
+            res.send(result)
+        })
+
+
+
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
