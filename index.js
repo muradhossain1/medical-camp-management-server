@@ -53,10 +53,10 @@ async function run() {
         };
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
-            const query = { email: email};
+            const query = { email: email };
             const user = await userCollection.findOne(query);
             const isAdmin = user?.role === 'admin';
-            if(!isAdmin){
+            if (!isAdmin) {
                 return res.status(403).send({ massage: 'forbidden  access' })
             }
             next();
@@ -93,7 +93,7 @@ async function run() {
             const result = await userCollection.insertOne(user);
             res.send(result);
         })
-        app.patch('/users/admin/:id',verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) }
             const updatedDoc = {
@@ -104,21 +104,54 @@ async function run() {
             const result = await userCollection.updateOne(filter, updatedDoc);
             res.send(result);
         })
-        app.delete('/users/:id',verifyToken, verifyAdmin, async (req, res) => {
+        app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await userCollection.deleteOne(query);
             res.send(result);
         })
 
-        
+
         // camps releted api
-        app.post('/camps',verifyToken, verifyAdmin, async(req, res) => {
+        app.get('/camps', async (req, res) => {
+            const result = await campCollection.find().toArray();
+            res.send(result)
+        })
+        app.get('/camps/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await campCollection.findOne(query);
+            res.send(result);
+        })
+        app.post('/camps', verifyToken, verifyAdmin, async (req, res) => {
             const camp = req.body;
             const result = await campCollection.insertOne(camp);
             res.send(result)
         })
-
+        app.patch('/camps/:id', async (req, res) => {
+            const camp = req.body;
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDuc = {
+                $set: {
+                    campName: camp.campName,
+                    image: camp.image,
+                    price: camp.price, 
+                    date: camp.date,
+                    location: camp.location, 
+                    healthcareName: camp.healthcareName, 
+                    description: camp.description
+                }
+            }
+            const result = await campCollection.updateOne(filter, updateDuc);
+            res.send(result);
+        })
+        app.delete('/camp/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await campCollection.deleteOne(query);
+            res.send(result);
+        })
 
 
         // Send a ping to confirm a successful connection
