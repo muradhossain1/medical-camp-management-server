@@ -142,6 +142,11 @@ async function run() {
 
 
         // camps releted api
+        app.get("/highest-participant-count", async (req, res) => {
+            const cursor = campCollection.find();
+            const result = await cursor.sort({ participantCount: -1 }).limit(6).toArray();
+            res.send(result)
+        })
         app.get('/camps', async (req, res) => {
             const search = req.query.search;
             let query = {}
