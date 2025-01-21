@@ -28,6 +28,7 @@ async function run() {
 
         const userCollection = client.db('medicalDB').collection('users')
         const campCollection = client.db('medicalDB').collection('camps')
+        const joinCampCollection = client.db('medicalDB').collection('join')
 
         // jwt releted api
         app.post('/jwt', async (req, res) => {
@@ -112,9 +113,45 @@ async function run() {
         })
 
 
+        // join camps releted api
+        app.post('/join-camps', async (req, res) => {
+            const joinCamp = req.body;
+            const result = await joinCampCollection.insertOne(joinCamp);
+
+            const id = joinCamp.campId;
+            const query = { _id: new ObjectId(id) }
+            const job = await campCollection.findOne(query);
+
+            let newCount = 0;
+            if (job.participantCount) {
+                newCount = job.participantCount + 1;
+            }
+            else {
+                newCount = 1;
+            }
+            // now update the camp info
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    participantCount: newCount
+                }
+            }
+            const updateResult = await campCollection.updateOne(filter, updatedDoc);
+            res.send(result)
+        })
+
+
         // camps releted api
         app.get('/camps', async (req, res) => {
-            const result = await campCollection.find().toArray();
+            const search = req.query.search;
+            let query = {}
+            if (search) {
+                query.$or = [
+                    { campName: { $regex: search, $options: 'i' } },
+                    { date: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const result = await campCollection.find(query).toArray();
             res.send(result)
         })
         app.get('/camp-details/:id', async (req, res) => {
@@ -134,7 +171,7 @@ async function run() {
             const result = await campCollection.insertOne(camp);
             res.send(result)
         })
-        app.patch('/update-camp/:id',verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/update-camp/:id', verifyToken, verifyAdmin, async (req, res) => {
             const camp = req.body;
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) }
@@ -142,10 +179,10 @@ async function run() {
                 $set: {
                     campName: camp.campName,
                     image: camp.image,
-                    price: camp.price, 
+                    price: camp.price,
                     date: camp.date,
-                    location: camp.location, 
-                    healthcareName: camp.healthcareName, 
+                    location: camp.location,
+                    healthcareName: camp.healthcareName,
                     description: camp.description
                 }
             }
