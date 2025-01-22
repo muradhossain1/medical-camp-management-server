@@ -69,6 +69,12 @@ async function run() {
             const result = await userCollection.find().toArray();
             res.send(result)
         })
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await userCollection.findOne(query);
+            res.send(result);
+        })
         app.get('/users/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             if (email !== req.decoded.email) {
@@ -84,14 +90,23 @@ async function run() {
         })
         app.post('/users', async (req, res) => {
             const user = req.body;
-
             const query = { email: user.email }
             const existingUser = await userCollection.findOne(query)
             if (existingUser) {
                 return res.send({ message: 'user already exists ' })
             }
-
             const result = await userCollection.insertOne(user);
+            res.send(result);
+        })
+        // user-profile-update
+        app.patch('/update-profile/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: req.body
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, options)
             res.send(result);
         })
         app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
