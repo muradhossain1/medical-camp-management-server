@@ -129,6 +129,12 @@ async function run() {
 
 
         // join camps releted api
+        app.get('/join-camps', async (req, res) => {
+            const email = req.query.participantEmail;
+            const query = { participantEmail: email };
+            const result = await joinCampCollection.find(query).toArray();
+            res.send(result)
+        })
         app.post('/join-camps', async (req, res) => {
             const joinCamp = req.body;
             const result = await joinCampCollection.insertOne(joinCamp);
@@ -153,6 +159,12 @@ async function run() {
             }
             const updateResult = await campCollection.updateOne(filter, updatedDoc);
             res.send(result)
+        })
+        app.delete('/join-camp/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await joinCampCollection.deleteOne(query);
+            res.send(result);
         })
 
 
