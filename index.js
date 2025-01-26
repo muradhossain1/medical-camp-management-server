@@ -31,6 +31,7 @@ async function run() {
         const campCollection = client.db('medicalDB').collection('camps')
         const joinCampCollection = client.db('medicalDB').collection('join')
         const paymentCollection = client.db('medicalDB').collection('payments')
+        const feedbackCollection = client.db('medicalDB').collection('feedbacks')
 
         // jwt releted api
         app.post('/jwt', async (req, res) => {
@@ -290,6 +291,17 @@ async function run() {
             res.send(paymentResult)
         })
 
+        // feedback releted api
+        app.get('/feedbacks', async (req, res) => {
+            const result = await feedbackCollection.find().toArray();
+            res.send(result)
+        })
+        app.post('/feedbacks', verifyToken, async (req, res) => {
+            const feedback = req.body;
+            const result = await feedbackCollection.insertOne(feedback);
+            res.send(result)
+        });
+        
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
