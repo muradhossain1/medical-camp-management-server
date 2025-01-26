@@ -4,6 +4,7 @@ const app = express();
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000
 
 app.use(cors())
@@ -29,6 +30,7 @@ async function run() {
         const userCollection = client.db('medicalDB').collection('users')
         const campCollection = client.db('medicalDB').collection('camps')
         const joinCampCollection = client.db('medicalDB').collection('join')
+        const paymentCollection = client.db('medicalDB').collection('payments')
 
         // jwt releted api
         app.post('/jwt', async (req, res) => {
@@ -135,6 +137,12 @@ async function run() {
             const result = await joinCampCollection.find(query).toArray();
             res.send(result)
         })
+        app.get('/join-camp/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await joinCampCollection.findOne(query);
+            res.send(result);
+        })
         app.post('/join-camps', async (req, res) => {
             const joinCamp = req.body;
             const result = await joinCampCollection.insertOne(joinCamp);
@@ -226,6 +234,35 @@ async function run() {
             const query = { _id: new ObjectId(id) }
             const result = await campCollection.deleteOne(query);
             res.send(result);
+        })
+
+        // payment
+        app.post('/create-payment-intent', async(req, res) => {
+            const {price} = req.body;
+            const amount = parseInt(price * 100)
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const paymentResult = await paymentCollection.insertOne(payment);
+
+            const id = payment.JoinCampId
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paymentStatus : 'paid'
+                }
+            }
+            const updateResult = await joinCampCollection.updateOne(filter, updatedDoc);
+            res.send(paymentResult)
         })
 
 
