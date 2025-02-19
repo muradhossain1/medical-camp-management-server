@@ -194,6 +194,11 @@ async function run() {
 
 
         // camps releted api
+        app.get("/featured", async (req, res) => {
+            const cursor = campCollection.find();
+            const result = await cursor.sort({ price: -1 }).limit(12).toArray();
+            res.send(result)
+        })
         app.get("/highest-participant-count", async (req, res) => {
             const cursor = campCollection.find();
             const result = await cursor.sort({ participantCount: -1 }).limit(6).toArray();
